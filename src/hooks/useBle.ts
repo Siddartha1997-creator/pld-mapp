@@ -1,11 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
+import { BleManager, Device, State } from 'react-native-ble-plx';
 import { BLE_SCAN_TIMEOUT_MS, ESP32_CHAR_UUID, ESP32_SERVICE_UUID } from '../constants/ble';
 import { BleDevice, PairingStep, ProvisionCredentials } from '../types/ble';
 
 // Module-level singleton — avoids re-initialising the native layer on re-renders
 const bleManager = new BleManager();
+
+// Wait for BLE to be powered on
+function waitForBlePoweredOn(timeout: number = 15000): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const sub = bleManager.onStateChange((state) => {
+      console.log("Current Bluetooth State:", state);
+      
+      if (state === 'PoweredOn') {
+        settled = true;
+        sub.remove();
+        resolve(true);
+      } else if (state === 'Unauthorized') {
+        settled = true;
+        sub.remove();
+        reject(new Error("Bluetooth permission denied. Check Info.plist and Settings."));
+      }
+    }, true); // 'true' forces it to fire immediately with current state
+
+    setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        sub.remove();
+        bleManager.state().then((state) => {
+          reject(new Error(`Bluetooth timeout: State is still ${state}`));
+        }).catch(() => {
+          reject(new Error('Bluetooth timeout: Unable to check state'));
+        });
+      }
+    }, timeout);
+  });
+}
 
 async function requestBlePermissions(): Promise<boolean> {
   if (Platform.OS === 'ios') return true;
@@ -62,6 +95,17 @@ export default function useBle(): UseBleReturn {
     const granted = await requestBlePermissions();
     if (!granted) {
       setError('Bluetooth permissions are required to scan for devices.');
+      return;
+    }
+
+    setStep('preparing');
+
+    // Wait for BLE radio to be ready
+    try {
+      await waitForBlePoweredOn(BLE_SCAN_TIMEOUT_MS);
+    } catch (e: any) {
+      setError(e?.message ?? 'Bluetooth is not ready.');
+      setStep('idle');
       return;
     }
 

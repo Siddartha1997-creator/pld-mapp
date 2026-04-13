@@ -13,4 +13,4 @@ export interface ProvisionCredentials {
 }
 
 /** Step in the pairing flow */
-export type PairingStep = 'idle' | 'scanning' | 'connecting' | 'form' | 'provisioning' | 'done';
+export type PairingStep = 'idle' | 'preparing' | 'scanning' | 'connecting' | 'form' | 'provisioning' | 'done';

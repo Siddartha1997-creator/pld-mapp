@@ -39,6 +39,7 @@ export default function HomeScreen() {
     clientRef.current?.end(true);
 
     manualDisconnect.current = false;
+    console.log('Connecting to MQTT broker…', HIVEMQ_ADMIN_DEFAULTS);
 
     const client = mqtt.connect(HIVEMQ_WS_URL, {
       username: HIVEMQ_ADMIN_DEFAULTS.USERNAME,

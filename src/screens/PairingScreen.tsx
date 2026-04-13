@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -193,6 +194,17 @@ export default function PairingScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* BLE initialising overlay */}
+      <Modal visible={step === 'preparing'} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.overlayBackdrop}>
+          <View style={styles.overlayCard}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.overlayTitle}>Enabling Bluetooth…</Text>
+            <Text style={styles.overlaySubtitle}>Waiting for the radio to be ready</Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -267,4 +279,20 @@ const styles = StyleSheet.create({
   connectedText: { ...typography.caption, color: colors.success, fontWeight: '600' },
   actions: { gap: spacing.sm },
   actionBtn: {},
+  overlayBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlayCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
+    width: '75%',
+  },
+  overlayTitle: { ...typography.body, color: colors.text, fontWeight: '600' },
+  overlaySubtitle: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
 });

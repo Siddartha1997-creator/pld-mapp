@@ -1,26 +1,25 @@
 /**
- * Secure storage utility wrapping expo-secure-store.
+ * Secure storage utility wrapping react-native-keychain.
  * All sensitive values (tokens, credentials) must go through here.
- * expo-secure-store uses iOS Keychain and Android Keystore under the hood.
+ * react-native-keychain uses iOS Keychain and Android Keystore under the hood.
  */
-import * as SecureStore from 'expo-secure-store';
+import * as Keychain from 'react-native-keychain';
 
 export const secureStorage = {
   async set(key: string, value: string): Promise<void> {
-    await SecureStore.setItemAsync(key, value, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-    });
+    await Keychain.setGenericPassword('value', value, { service: key });
   },
 
   async get(key: string): Promise<string | null> {
-    return SecureStore.getItemAsync(key);
+    const result = await Keychain.getGenericPassword({ service: key });
+    return result ? result.password : null;
   },
 
   async delete(key: string): Promise<void> {
-    await SecureStore.deleteItemAsync(key);
+    await Keychain.resetGenericPassword({ service: key });
   },
 
   async clear(keys: string[]): Promise<void> {
-    await Promise.all(keys.map((k) => SecureStore.deleteItemAsync(k)));
+    await Promise.all(keys.map((k) => Keychain.resetGenericPassword({ service: k })));
   },
 };
