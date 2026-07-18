@@ -3,11 +3,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { colors } from '../theme';
 import HomeScreen from '../screens/HomeScreen';
-import PairingScreen from '../screens/PairingScreen';
+import DeviceListScreen from '../screens/DeviceListScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export type AppTabParamList = {
+  Devices: undefined;
   MQ: undefined;
-  Pairing: undefined;
+  Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
@@ -25,13 +27,18 @@ export default function AppNavigator() {
           borderTopWidth: 1,
         },
         tabBarIcon: ({ color, size }) => {
-          const name = route.name === 'MQ' ? 'wifi' : 'bluetooth';
-          return <Ionicons name={name} size={size} color={color} />;
+          const iconMap: Record<string, string> = {
+            Devices: 'grid-outline',
+            MQ: 'wifi',
+            Profile: 'person-outline',
+          };
+          return <Ionicons name={iconMap[route.name] ?? 'ellipse-outline'} size={size} color={color} />;
         },
       })}
     >
+      <Tab.Screen name="Devices" component={DeviceListScreen} options={{ tabBarLabel: 'Devices' }} />
       <Tab.Screen name="MQ" component={HomeScreen} options={{ tabBarLabel: 'MQ' }} />
-      <Tab.Screen name="Pairing" component={PairingScreen} options={{ tabBarLabel: 'Pairing' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
 }

@@ -8,8 +8,10 @@ export interface ProvisionCredentials {
   ssid: string;
   pass: string;
   host: string;
-  u: string; // MQTT username
-  p: string; // MQTT password
+  u: string;          // MQTT username
+  p: string;          // MQTT password
+  id: string;         // Device UUID — ESP32 uses this in its MQTT client ID and topics
+  base_topic: string; // MQTT base topic: pld/u/{userId}/d/{deviceId}
 }
 
 /** Step in the pairing flow */

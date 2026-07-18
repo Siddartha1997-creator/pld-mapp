@@ -1,10 +1,3 @@
-/**
- * Signup flow:
- * 1. User enters a desired MQTT username + password.
- * 2. We first authenticate against the local server with stored admin credentials
- *    to obtain a JWT (if we don't already have a valid one).
- * 3. We then POST to HiveMQ Cloud to create MQTT credentials for the new user.
- */
 import React, { useRef, useState } from 'react';
 import {
   Alert,
@@ -20,9 +13,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { useAuth } from '../context/AuthContext';
-import { hivemqApi } from '../api/hivemq';
 import { extractErrorMessage } from '../api/client';
-import { tokenManager } from '../utils/tokenManager';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -33,19 +24,23 @@ import type { AuthStackParamList } from '../navigation/AuthNavigator';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
 export default function SignupScreen({ navigation }: Props) {
-  const { login, getAdminCredentials } = useAuth();
+  const { signup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('Creating account…');
 
-  const username = useFormField();
+  const displayName = useFormField();
+  const email = useFormField();
   const password = useFormField();
   const confirmPassword = useFormField();
+
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
   const handleSignup = async () => {
     const ok =
-      username.validate([rules.required('Username'), rules.minLength(3), rules.noSpaces]) &&
+      displayName.validate([rules.required('Display name'), rules.minLength(2)]) &&
+      email.validate([rules.required('Email'), rules.noSpaces]) &&
       password.validate([rules.required('Password'), rules.minLength(6)]) &&
       confirmPassword.validate([
         rules.required('Confirm password'),
@@ -56,24 +51,13 @@ export default function SignupScreen({ navigation }: Props) {
 
     setLoading(true);
     try {
-      // Ensure we have a valid token before calling the HiveMQ API
-      const existingToken = await tokenManager.get();
-      if (!existingToken || tokenManager.isExpired(existingToken)) {
-        setLoadingMsg('Authenticating…');
-        const { username: adminUser, password: adminPass } = await getAdminCredentials();
-        await login(adminUser, adminPass);
-      }
-
-      setLoadingMsg('Creating MQTT credentials…');
-      await hivemqApi.createMqttCredentials({
-        username: username.value.trim(),
-        password: password.value,
-      });
+      setLoadingMsg('Creating account…');
+      await signup(email.value.trim(), password.value, displayName.value.trim());
 
       Alert.alert(
         'Account created',
-        `MQTT credentials for "${username.value.trim()}" were created successfully.`,
-        [{ text: 'Sign in', onPress: () => navigation.navigate('Login') }]
+        'Your account has been created successfully.',
+        [{ text: 'Sign in', onPress: () => navigation.navigate('Login') }],
       );
     } catch (err) {
       Alert.alert('Signup failed', extractErrorMessage(err));
@@ -94,16 +78,28 @@ export default function SignupScreen({ navigation }: Props) {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Set up your MQTT credentials</Text>
+          <Text style={styles.subtitle}>Get started with PLD Mapp</Text>
         </View>
 
         <View style={styles.form}>
           <Input
-            label="Username"
-            placeholder="Choose a username"
-            value={username.value}
-            onChangeText={username.onChange}
-            error={username.error}
+            label="Display Name"
+            placeholder="Your name"
+            value={displayName.value}
+            onChangeText={displayName.onChange}
+            error={displayName.error}
+            returnKeyType="next"
+            onSubmitEditing={() => emailRef.current?.focus()}
+          />
+
+          <Input
+            ref={emailRef}
+            label="Email"
+            placeholder="you@example.com"
+            value={email.value}
+            onChangeText={email.onChange}
+            error={email.error}
+            keyboardType="email-address"
             returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
           />
@@ -111,7 +107,7 @@ export default function SignupScreen({ navigation }: Props) {
           <Input
             ref={passwordRef}
             label="Password"
-            placeholder="Choose a password"
+            placeholder="Choose a password (min 6 chars)"
             value={password.value}
             onChangeText={password.onChange}
             error={password.error}

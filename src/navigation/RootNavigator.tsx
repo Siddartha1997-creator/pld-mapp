@@ -12,7 +12,7 @@ import { colors } from '../theme';
 import { DEV_BYPASS_AUTH } from '../constants/config';
 
 export default function RootNavigator() {
-  const { token, isLoading } = useAuth();
+  const { appwriteUser, isLoading } = useAuth();
 
   if (DEV_BYPASS_AUTH) {
     return (
@@ -32,7 +32,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {token ? <AppNavigator /> : <AuthNavigator />}
+      {appwriteUser ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

@@ -27,19 +27,18 @@ export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const username = useFormField();
+  const email = useFormField();
   const password = useFormField();
   const passwordRef = useRef<TextInput>(null);
 
   const handleLogin = async () => {
-    const usernameOk = username.validate([rules.required('Username')]);
+    const emailOk = email.validate([rules.required('Email'), rules.noSpaces]);
     const passwordOk = password.validate([rules.required('Password')]);
-    if (!usernameOk || !passwordOk) return;
+    if (!emailOk || !passwordOk) return;
 
     setLoading(true);
     try {
-      await login(username.value.trim(), password.value);
-      // Navigation handled by RootNavigator reacting to auth state
+      await login(email.value.trim(), password.value);
     } catch (err) {
       Alert.alert('Login failed', extractErrorMessage(err));
     } finally {
@@ -63,11 +62,12 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={styles.form}>
           <Input
-            label="Username"
-            placeholder="Enter username"
-            value={username.value}
-            onChangeText={username.onChange}
-            error={username.error}
+            label="Email"
+            placeholder="Enter your email"
+            value={email.value}
+            onChangeText={email.onChange}
+            error={email.error}
+            keyboardType="email-address"
             returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
           />
